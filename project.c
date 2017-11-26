@@ -5,11 +5,42 @@
 /* 10 Points */
 void ALU(unsigned A,unsigned B,char ALUControl,unsigned *ALUresult,char *Zero)
 {
+	switch(ALUControl)
+	{
+		case 000:
+				*ALUresult == A + B;
+				break;
+		case 001:
+				*ALUresult == A - B;
+				break;
+		case 010:
+				if(A < B)
+					*ALUresult = 1;
+				else
+					*ALUresult = 0;
+				break;
+		case 011:
+				if(A < B)
+					*ALUresult = 1;
+				else
+					*ALUresult = 0;
+				break;
+		case 100:
+				
+				break;
+		case 101:
+				
+				break;
+		case 110:
+				
+				break;
+		case 111:
+				
+				break;
+	}
 
 }
 
-/* instruction fetch */
-/* 10 Points */
 int instruction_fetch(unsigned PC,unsigned *Mem,unsigned *instruction)
 {
 
