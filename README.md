@@ -1,1 +1,1 @@
-# myspim
+Mini processor simulator
