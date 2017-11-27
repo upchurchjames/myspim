@@ -26,16 +26,16 @@ void ALU(unsigned A,unsigned B,char ALUControl,unsigned *ALUresult,char *Zero)
 					*ALUresult = 0;
 				break;
 		case 100:
-				
+				*ALUresult = A & B;
 				break;
 		case 101:
-				
+				*ALUresult = A | B;
 				break;
 		case 110:
-				
+				B << 16;
 				break;
 		case 111:
-				
+				*ALUresult = ~A;
 				break;
 	}
 
