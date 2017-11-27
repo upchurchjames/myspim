@@ -26,16 +26,16 @@ void ALU(unsigned A,unsigned B,char ALUControl,unsigned *ALUresult,char *Zero)
 					*ALUresult = 0;
 				break;
 		case 100:
-				*ALUresult = A & B;
+				
 				break;
 		case 101:
-				*ALUresult = A | B;
+				
 				break;
 		case 110:
-				B << 16;
+				
 				break;
 		case 111:
-				*ALUresult = ~A;
+				
 				break;
 	}
 
@@ -43,7 +43,20 @@ void ALU(unsigned A,unsigned B,char ALUControl,unsigned *ALUresult,char *Zero)
 
 int instruction_fetch(unsigned PC,unsigned *Mem,unsigned *instruction)
 {
-
+	int i, retval;
+	
+	for (i = 0; i < MEMSIZE; i++)
+	{
+		if (PC == Mem[i])
+		{
+			instruction = Mem[i];
+			retval = 0;
+			break;
+		} else
+			retval = 1;
+	}
+	
+	return retval;	
 }
 
 
