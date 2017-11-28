@@ -1,40 +1,39 @@
 #include "spimcore.h"
 
-
 /* ALU */
 /* 10 Points */
 void ALU(unsigned A,unsigned B,char ALUControl,unsigned *ALUresult,char *Zero)
 {
 	switch(ALUControl)
 	{
-		case 000:
-				*ALUresult == A + B;
+		case 0:
+				*ALUresult = A + B;
 				break;
-		case 001:
-				*ALUresult == A - B;
+		case 1:
+				*ALUresult = A - B;
 				break;
-		case 010:
+		case 2:
 				if(A < B)
 					*ALUresult = 1;
 				else
 					*ALUresult = 0;
 				break;
-		case 011:
+		case 3:
 				if(A < B)
 					*ALUresult = 1;
 				else
 					*ALUresult = 0;
 				break;
-		case 100:
+		case 4:
 				*ALUresult = A & B;
 				break;
-		case 101:
+		case 5:
 				*ALUresult = A | B;
 				break;
-		case 110:
+		case 6:
 				B << 16;
 				break;
-		case 111:
+		case 7:
 				*ALUresult = ~A;
 				break;
 	}
@@ -43,20 +42,9 @@ void ALU(unsigned A,unsigned B,char ALUControl,unsigned *ALUresult,char *Zero)
 
 int instruction_fetch(unsigned PC,unsigned *Mem,unsigned *instruction)
 {
-	int i, retval;
-	
-	for (i = 0; i < MEMSIZE; i++)
-	{
-		if (PC == Mem[i])
-		{
-			*instruction = Mem[i];
-			retval = 0;
-			break;
-		} else
-			retval = 1;
-	}
-	
-	return retval;	
+	PC = PC >> 2;
+	*instruction = Mem[PC];
+	return 0;	
 }
 
 
@@ -66,7 +54,7 @@ void instruction_partition(unsigned instruction, unsigned *op, unsigned *r1,unsi
 {
 	*op = instruction >> 26;
 	*r1 = (instruction << 6) >> 27;
-	*r2 = (instruction << 10) >> 27;
+	*r2 = (instruction << 11) >> 27;
 	*r3 = (instruction << 16) >> 27;
 	*funct = (instruction << 26) >> 26;
 	*offset = (instruction << 16) >> 16;
@@ -80,11 +68,12 @@ void instruction_partition(unsigned instruction, unsigned *op, unsigned *r1,unsi
 int instruction_decode(unsigned op,struct_controls *controls)
 {
 	int halt_true = 0;
+
 	switch(op)
 	{
 		// Add, Sub, And, Or, Slt, Sltu
-		case 0b000000:
-			controls->ALUOp = 111;
+		case 0:
+			controls->ALUOp = 7;
 			controls->MemRead = 0;
 			controls->MemWrite = 0;
 			controls->RegWrite = 1;
@@ -92,11 +81,11 @@ int instruction_decode(unsigned op,struct_controls *controls)
 			controls->Jump = 2;
 			controls->Branch = 2;
 			controls->MemtoReg = 0;
-			controls->ALUsrc = 0;
+			controls->ALUSrc = 0;
 			break;
 		// Lw
-		case 0b100011:
-			controls->ALUOp = 000;
+		case 35:
+			controls->ALUOp = 0;
 			controls->MemRead = 1;
 			controls->MemWrite = 0;
 			controls->RegWrite = 1;
@@ -104,11 +93,11 @@ int instruction_decode(unsigned op,struct_controls *controls)
 			controls->Jump = 0;
 			controls->Branch = 0;
 			controls->MemtoReg = 1;
-			controls->ALUsrc = 1;
+			controls->ALUSrc = 1;
 			break;
 		// Sw
-		case 0b101011:
-			controls->ALUOp = 000;
+		case 43:
+			controls->ALUOp = 0;
 			controls->MemRead = 0;
 			controls->MemWrite = 1;
 			controls->RegWrite = 0;
@@ -116,11 +105,11 @@ int instruction_decode(unsigned op,struct_controls *controls)
 			controls->Jump = 2;
 			controls->Branch = 2;
 			controls->MemtoReg = 1;
-			controls->ALUsrc = 1;
+			controls->ALUSrc = 1;
 			break;
 		// Beq
-		case 0b000100:
-			controls->ALUOp = 001;
+		case 4:
+			controls->ALUOp = 1;
 			controls->MemRead = 0;
 			controls->MemWrite = 0;
 			controls->RegWrite = 0;
@@ -128,11 +117,11 @@ int instruction_decode(unsigned op,struct_controls *controls)
 			controls->Jump = 2;
 			controls->Branch = 1;
 			controls->MemtoReg = 0;
-			controls->ALUsrc = 1;
+			controls->ALUSrc = 1;
 			break;
 		// Addi
-		case 0b001000:
-			controls->ALUOp = 000;
+		case 8:
+			controls->ALUOp = 0;
 			controls->MemRead = 0;
 			controls->MemWrite = 0;
 			controls->RegWrite = 1;
@@ -140,11 +129,11 @@ int instruction_decode(unsigned op,struct_controls *controls)
 			controls->Jump = 2;
 			controls->Branch = 2;
 			controls->MemtoReg = 0;
-			controls->ALUsrc = 1;
+			controls->ALUSrc = 1;
 			break;
 		// Lui
-		case 0b001111:
-			controls->ALUOp = 000;
+		case 17:
+			controls->ALUOp = 0;
 			controls->MemRead = 1;
 			controls->MemWrite = 0;
 			controls->RegWrite = 1;
@@ -152,11 +141,11 @@ int instruction_decode(unsigned op,struct_controls *controls)
 			controls->Jump = 2;
 			controls->Branch = 2;
 			controls->MemtoReg = 1;
-			controls->ALUsrc = 1;
+			controls->ALUSrc = 1;
 			break;
 		// Slti
-		case 0b001010:
-			controls->ALUOp = 010;
+		case 10:
+			controls->ALUOp = 10;
 			controls->MemRead = 0;
 			controls->MemWrite = 0;
 			controls->RegWrite = 1;
@@ -164,11 +153,11 @@ int instruction_decode(unsigned op,struct_controls *controls)
 			controls->Jump = 2;
 			controls->Branch = 2;
 			controls->MemtoReg = 0;
-			controls->ALUsrc = 1;
+			controls->ALUSrc = 1;
 			break;
 		// Sltiu
-		case 0b001001:
-			controls->ALUOp = 010;
+		case 9:
+			controls->ALUOp = 10;
 			controls->MemRead = 0;
 			controls->MemWrite = 0;
 			controls->RegWrite = 1;
@@ -176,19 +165,19 @@ int instruction_decode(unsigned op,struct_controls *controls)
 			controls->Jump = 2;
 			controls->Branch = 2;
 			controls->MemtoReg = 0;
-			controls->ALUsrc = 1;
+			controls->ALUSrc = 1;
 			break;
 		// J
-		case 0b000010:
-			controls->ALUOp = 000;
+		case 2:
+			controls->ALUOp = 0;
 			controls->MemRead = 2;
-			controls->MemWrite 2;
+			controls->MemWrite = 2;
 			controls->RegWrite = 2;
 			controls->RegDst = 2;
 			controls->Jump = 1;
 			controls->Branch = 2;
 			controls->MemtoReg = 2;
-			controls->ALUsrc = 0;
+			controls->ALUSrc = 0;
 			break;
 		default:
 			halt_true = 1;
@@ -203,6 +192,7 @@ void read_register(unsigned r1,unsigned r2,unsigned *Reg,unsigned *data1,unsigne
 {
 	*data1 = Reg[r1];
 	*data2 = Reg[r2];
+	printf("%u %u", *data1, *data2);
 }
 
 
@@ -231,124 +221,114 @@ void sign_extend(unsigned offset,unsigned *extended_value)
 /* 10 Points */
 int ALU_operations(unsigned data1,unsigned data2,unsigned extended_value,unsigned funct,char ALUOp,char ALUSrc,unsigned *ALUresult,char *Zero)
 {
+
+	int retval = 0;
+	printf(" %u %u ", ALUOp, funct);
 	switch(ALUOp)
 	{
-		case 000:
+		case 0:
 				if(ALUSrc == 1)	
-					*ALUresult = data1 + extended_value;
+					ALU(data1, extended_value, ALUOp, ALUresult, Zero);
 				else
-					*ALUresult = data1 + data2;
-				return 0;
-		case 001:
+					ALU(data1, data2, ALUOp, ALUresult, Zero);
+				return retval;
+		case 1:
 				if(ALUSrc == 1)
-					*ALUresult = data1 - extended_value;
+					ALU(data1, extended_value, ALUOp, ALUresult, Zero);
 				else
-					*ALUresult = data1 - data2;
-				return 0;
-		case 010:
+					ALU(data1, data2, ALUOp, ALUresult, Zero);
+				return retval;
+		case 2:
 				if(ALUSrc == 1)
+					ALU(data1, extended_value, ALUOp, ALUresult, Zero);
+				else
+					ALU(data1, data2, ALUOp, ALUresult, Zero);
+				return retval;
+		case 3:
+				if(ALUSrc == 1)
+					ALU(data1, extended_value, ALUOp, ALUresult, Zero);
+				else
+					ALU(data1, data2, ALUOp, ALUresult, Zero);
+				return retval;
+		case 4:
+				if(ALUSrc == 1)
+					ALU(data1, extended_value, ALUOp, ALUresult, Zero);
+				else
+					ALU(data1, data2, ALUOp, ALUresult, Zero);
+				return retval;
+		case 5:
+				if(ALUSrc == 1)
+					ALU(data1, extended_value, ALUOp, ALUresult, Zero);
+				else
+					ALU(data1, data2, ALUOp, ALUresult, Zero);
+				return retval;
+		case 6:
+				if(ALUSrc == 1)
+					ALU(data1, extended_value, ALUOp, ALUresult, Zero);
+				else
+					ALU(data1, data2, ALUOp, ALUresult, Zero);
+				return retval;
+		case 7:
+				if(funct == 64)
 				{
-					if(data1 < extended_value)
-						*ALUresult = 1;
-					else
-						*ALUresult = 0;
-				}
-				else
-				{
-					if(data1 < data2)
-						*ALUresult = 1;
-					else
-						*ALUresult = 0;
-				}
-				return 0;
-		case 011:
-				if(ALUSrc == 1)
-				{
-					if(data1 > extended_value)
-						*ALUresult = 1;
-					else
-						*ALUresult = 0;
-				}
-				else
-				{
-					if(data1 > data2)
-						*ALUresult = 1;
-					else
-						*ALUresult = 0;
-				}
-				return 0;
-		case 100:
-				if(ALUSrc == 1)
-					*ALUresult = data1 & extended_value;
-				else
-					*ALUresult = data1 & data2;
-				return 0;
-		case 101:
-				if(ALUSrc == 1)
-					*ALUresult = data1 | extended_value;
-				else
-					*ALUresult = data1 | data2;
-				return 0;
-		case 110:
-				if(ALUSrc == 1)
-					extended_value << 16;
-				else
-					data2 << 16;
-				return 0;
-		case 111:
-				if(funct == 100000)
-				{
+					ALUOp = 0;
 					if(ALUSrc == 1)	
-						*ALUresult = data1 + extended_value;
+						ALU(data1, extended_value, ALUOp, ALUresult, Zero);
 					else
-						*ALUresult = data1 + data2;
-					return 0;
+						ALU(data1, data2, ALUOp, ALUresult, Zero);
+					return retval;
 				}
-				else if(funct == 100100)
+				else if(funct == 36)
 				{
+					ALUOp = 4;
 					if(ALUSrc == 1)
-						*ALUresult = data1 & extended_value;
+						ALU(data1, extended_value, ALUOp, ALUresult, Zero);
 					else
-						*ALUresult = data1 & data2;
-					return 0;
+						ALU(data1, data2, ALUOp, ALUresult, Zero);
+					return retval;
 				}
-				else if(funct == 100101)
+				else if(funct == 37)
 				{
+					ALUOp = 5;
 					if(ALUSrc == 1)
-						*ALUresult = data1 | extended_value;
+						ALU(data1, extended_value, ALUOp, ALUresult, Zero);
 					else
-						*ALUresult = data1 | data2;
-					return 0;
+						ALU(data1, data2, ALUOp, ALUresult, Zero);
+					return retval;
 				}
-				else if((funct == 101010) | (funct == 101011))
+				else if(funct == 42)
 				{
+					ALUOp = 2;
 					if(ALUSrc == 1)
-					{
-						if(data1 < extended_value)
-							*ALUresult = 1;
-						else
-							*ALUresult = 0;
-					}
+						ALU(data1, extended_value, ALUOp, ALUresult, Zero);
 					else
-					{
-						if(data1 < data2)
-							*ALUresult = 1;
-						else
-							*ALUresult = 0;
-					}
-					return 0;
+						ALU(data1, data2, ALUOp, ALUresult, Zero);
+					return retval;
 				}
-				else if(funct == 100010)
+				else if (funct == 43)
 				{
-					if(ALUSrc == 1)
-						*ALUresult = data1 - extended_value;
+					ALUOp = 3;
+					if (ALUSrc == 1)
+						ALU(data1, extended_value,ALUOp, ALUresult, Zero);
 					else
-						*ALUresult = data1 - data2;
-					return 0;
+						ALU(data1, data2, ALUOp, ALUresult, Zero);
+					return retval;
 				}
+				else if(funct == 34)
+				{
+					ALUOp = 1;
+					if(ALUSrc == 1)
+						ALU(data1, extended_value, ALUOp, ALUresult, Zero);
+					else
+						ALU(data1, data2, ALUOp, ALUresult, Zero);
+					return retval;
+				}
+				break;
 		default:
-				return 1;
+			retval = 1;
 	}
+
+	return retval;
 }
 
 /* Read / Write Memory */
@@ -358,18 +338,11 @@ int rw_memory(unsigned ALUresult,unsigned data2,char MemWrite,char MemRead,unsig
 	if (MemRead == 1)
 	{
 		*memdata = Mem[ALUresult];
-	} else
-	{
-		return 1;
 	}
-
 
 	if (MemWrite == 1)
 	{
 		Mem[ALUresult] = data2;
-	} else
-	{
-		return 1;
 	}
 
 	return 0;
@@ -410,7 +383,7 @@ void PC_update(unsigned jsec,unsigned extended_value,char Branch,char Jump,char 
 
 	if (Branch == 0 || Jump == 0)
 	{
-		PC = tempPC;
+		*PC = tempPC;
 	}
 }
 
