@@ -89,7 +89,124 @@ void sign_extend(unsigned offset,unsigned *extended_value)
 /* 10 Points */
 int ALU_operations(unsigned data1,unsigned data2,unsigned extended_value,unsigned funct,char ALUOp,char ALUSrc,unsigned *ALUresult,char *Zero)
 {
-
+	switch(ALUOp)
+	{
+		case 000:
+				if(ALUSrc == 1)	
+					*ALUresult = data1 + extended_value;
+				else
+					*ALUresult = data1 + data2;
+				return 0;
+		case 001:
+				if(ALUSrc == 1)
+					*ALUresult = data1 - extended_value;
+				else
+					*ALUresult = data1 - data2;
+				return 0;
+		case 010:
+				if(ALUSrc == 1)
+				{
+					if(data1 < extended_value)
+						*ALUresult = 1;
+					else
+						*ALUresult = 0;
+				}
+				else
+				{
+					if(data1 < data2)
+						*ALUresult = 1;
+					else
+						*ALUresult = 0;
+				}
+				return 0;
+		case 011:
+				if(ALUSrc == 1)
+				{
+					if(data1 > extended_value)
+						*ALUresult = 1;
+					else
+						*ALUresult = 0;
+				}
+				else
+				{
+					if(data1 > data2)
+						*ALUresult = 1;
+					else
+						*ALUresult = 0;
+				}
+				return 0;
+		case 100:
+				if(ALUSrc == 1)
+					*ALUresult = data1 & extended_value;
+				else
+					*ALUresult = data1 & data2;
+				return 0;
+		case 101:
+				if(ALUSrc == 1)
+					*ALUresult = data1 | extended_value;
+				else
+					*ALUresult = data1 | data2;
+				return 0;
+		case 110:
+				if(ALUSrc == 1)
+					extended_value << 16;
+				else
+					data2 << 16;
+				return 0;
+		case 111:
+				if(funct == 100000)
+				{
+					if(ALUSrc == 1)	
+						*ALUresult = data1 + extended_value;
+					else
+						*ALUresult = data1 + data2;
+					return 0;
+				}
+				else if(funct == 100100)
+				{
+					if(ALUSrc == 1)
+						*ALUresult = data1 & extended_value;
+					else
+						*ALUresult = data1 & data2;
+					return 0;
+				}
+				else if(funct == 100101)
+				{
+					if(ALUSrc == 1)
+						*ALUresult = data1 | extended_value;
+					else
+						*ALUresult = data1 | data2;
+					return 0;
+				}
+				else if((funct == 101010) | (funct == 101011))
+				{
+					if(ALUSrc == 1)
+					{
+						if(data1 < extended_value)
+							*ALUresult = 1;
+						else
+							*ALUresult = 0;
+					}
+					else
+					{
+						if(data1 < data2)
+							*ALUresult = 1;
+						else
+							*ALUresult = 0;
+					}
+					return 0;
+				}
+				else if(funct == 100010)
+				{
+					if(ALUSrc == 1)
+						*ALUresult = data1 - extended_value;
+					else
+						*ALUresult = data1 - data2;
+					return 0;
+				}
+		default:
+				return 1;
+	}
 }
 
 /* Read / Write Memory */
