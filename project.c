@@ -4,6 +4,7 @@
 /* 10 Points */
 void ALU(unsigned A,unsigned B,char ALUControl,unsigned *ALUresult,char *Zero)
 {
+	unsigned temp;
 	switch(ALUControl)
 	{
 		case 0:
@@ -31,11 +32,15 @@ void ALU(unsigned A,unsigned B,char ALUControl,unsigned *ALUresult,char *Zero)
 				*ALUresult = A | B;
 				break;
 		case 6:
-				B << 16;
+				*ALUresult = B;
+				*ALUresult <<= 16;
 				break;
 		case 7:
 				*ALUresult = ~A;
 				break;
+
+		if (!*ALUresult)
+			*Zero = 1;
 	}
 
 }
@@ -43,6 +48,10 @@ void ALU(unsigned A,unsigned B,char ALUControl,unsigned *ALUresult,char *Zero)
 int instruction_fetch(unsigned PC,unsigned *Mem,unsigned *instruction)
 {
 	PC = PC >> 2;
+
+	if (PC >= 100000000000000)
+		return 1;
+
 	*instruction = Mem[PC];
 	return 0;	
 }
@@ -90,8 +99,8 @@ int instruction_decode(unsigned op,struct_controls *controls)
 			controls->MemWrite = 0;
 			controls->RegWrite = 1;
 			controls->RegDst = 0;
-			controls->Jump = 0;
-			controls->Branch = 0;
+			controls->Jump = 2;
+			controls->Branch = 2;
 			controls->MemtoReg = 1;
 			controls->ALUSrc = 1;
 			break;
@@ -132,20 +141,20 @@ int instruction_decode(unsigned op,struct_controls *controls)
 			controls->ALUSrc = 1;
 			break;
 		// Lui
-		case 17:
-			controls->ALUOp = 0;
-			controls->MemRead = 1;
+		case 15:
+			controls->ALUOp = 6;
+			controls->MemRead = 0;
 			controls->MemWrite = 0;
 			controls->RegWrite = 1;
 			controls->RegDst = 0;
 			controls->Jump = 2;
 			controls->Branch = 2;
-			controls->MemtoReg = 1;
+			controls->MemtoReg = 0;
 			controls->ALUSrc = 1;
 			break;
 		// Slti
 		case 10:
-			controls->ALUOp = 10;
+			controls->ALUOp = 0;
 			controls->MemRead = 0;
 			controls->MemWrite = 0;
 			controls->RegWrite = 1;
@@ -157,7 +166,7 @@ int instruction_decode(unsigned op,struct_controls *controls)
 			break;
 		// Sltiu
 		case 9:
-			controls->ALUOp = 10;
+			controls->ALUOp = 0;
 			controls->MemRead = 0;
 			controls->MemWrite = 0;
 			controls->RegWrite = 1;
@@ -192,7 +201,6 @@ void read_register(unsigned r1,unsigned r2,unsigned *Reg,unsigned *data1,unsigne
 {
 	*data1 = Reg[r1];
 	*data2 = Reg[r2];
-	printf("%u %u", *data1, *data2);
 }
 
 
@@ -223,7 +231,7 @@ int ALU_operations(unsigned data1,unsigned data2,unsigned extended_value,unsigne
 {
 
 	int retval = 0;
-	printf(" %u %u ", ALUOp, funct);
+
 	switch(ALUOp)
 	{
 		case 0:
@@ -269,7 +277,7 @@ int ALU_operations(unsigned data1,unsigned data2,unsigned extended_value,unsigne
 					ALU(data1, data2, ALUOp, ALUresult, Zero);
 				return retval;
 		case 7:
-				if(funct == 64)
+				if(funct == 32)
 				{
 					ALUOp = 0;
 					if(ALUSrc == 1)	
@@ -335,14 +343,20 @@ int ALU_operations(unsigned data1,unsigned data2,unsigned extended_value,unsigne
 /* 10 Points */
 int rw_memory(unsigned ALUresult,unsigned data2,char MemWrite,char MemRead,unsigned *memdata,unsigned *Mem)
 {
+	unsigned temp = ALUresult % 4;
+
 	if (MemRead == 1)
 	{
-		*memdata = Mem[ALUresult];
+		if (temp != 0)
+			return 1;
+		*memdata = Mem[ALUresult / 4];
 	}
 
 	if (MemWrite == 1)
 	{
-		Mem[ALUresult] = data2;
+		if (temp != 0)
+			return 1;
+		Mem[ALUresult / 4] = data2;
 	}
 
 	return 0;
@@ -368,22 +382,39 @@ void write_register(unsigned r2,unsigned r3,unsigned memdata,unsigned ALUresult,
 		else
 			Reg[r2] = memdata;
 	}
+
+	Reg[0] = 0;
 }
 
 /* PC update */
 /* 10 Points */
 void PC_update(unsigned jsec,unsigned extended_value,char Branch,char Jump,char Zero,unsigned *PC)
 {
-	unsigned tempPC = *PC;
-	*PC += 4;
+	unsigned tempPC = *PC + 4, newJsec = tempPC;
 
-	extended_value = extended_value << 2;
+	extended_value <<= 2;
+	jsec <<= 2;
+	newJsec >>= 28;
+	newJsec <<= 28;
 
-	PC += extended_value;
+	newJsec += jsec;
 
-	if (Branch == 0 || Jump == 0)
-	{
+	if (Branch == 2 && Jump == 2)
 		*PC = tempPC;
+	else if (Branch == 1 && Zero == 1)
+	{
+		*PC += extended_value;
+		
+		if (Jump == 0)
+			return;
 	}
-}
+	else if (Branch == 0 || Zero == 0)
+	{	
+		*PC = tempPC;
+		return;
+	}
 
+
+	if (Jump == 1)
+		*PC = newJsec;
+}
